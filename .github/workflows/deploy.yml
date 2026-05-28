@@ -18,4 +18,4 @@ jobs:
           mkdir -p ~/.ssh
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$VM_USER@$VM_HOST" "set -e; [ ! -d /opt/wefreep/.git ] && git clone https://github.com/Wikolabs/wefreep.git /opt/wefreep; cd /opt/wefreep && git pull origin main && docker build -t wefreep:local . && (docker stop wefreep 2>/dev/null; docker rm wefreep 2>/dev/null; true) && docker run -d --name wefreep -p 3054:3000 --restart unless-stopped wefreep:local && echo 'Deployed wefreep on port 3054'"
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$VM_USER@$VM_HOST" "set -e; if [ -d /opt/wefreep/.git ]; then cd /opt/wefreep && git fetch origin main && git reset --hard origin/main; else git clone https://github.com/Wikolabs/wefreep.git /opt/wefreep && cd /opt/wefreep; fi && docker build -t wefreep:local . && (docker stop wefreep 2>/dev/null; docker rm wefreep 2>/dev/null; true) && docker run -d --name wefreep -p 3054:3000 --restart unless-stopped wefreep:local && echo 'Deployed wefreep on port 3054'"
