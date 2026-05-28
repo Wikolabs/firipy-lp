@@ -6,33 +6,26 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Log in to GHCR
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-
-      - name: Build and push Docker image
-        run: |
-          docker build -t ghcr.io/wikolabs/wefreep:latest .
-          docker push ghcr.io/wikolabs/wefreep:latest
-
       - name: Deploy to VM via SSH
         env:
           SSH_PRIVATE_KEY: ${{ secrets.WIKOLABS_VM_SSH_KEY }}
           VM_HOST: ${{ secrets.WIKOLABS_VM_HOST }}
           VM_USER: ${{ secrets.WIKOLABS_VM_USER }}
-          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GHCR_USER: ${{ github.actor }}
         run: |
           mkdir -p ~/.ssh
-          echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          printf '%s' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H "$VM_HOST" >> ~/.ssh/known_hosts 2>/dev/null
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no "$VM_USER@$VM_HOST" "echo '$GHCR_TOKEN' | docker login ghcr.io -u '$GHCR_USER' --password-stdin && docker pull ghcr.io/wikolabs/wefreep:latest && (docker stop wefreep 2>/dev/null; docker rm wefreep 2>/dev/null; true) && docker run -d --name wefreep -p 3054:3000 --restart unless-stopped ghcr.io/wikolabs/wefreep:latest && echo 'Deployed wefreep on port 3054'"
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$VM_USER@$VM_HOST" bash << 'REMOTE
+set -e
+[ ! -d /opt/wefreep/.git ] && git clone https://github.com/Wikolabs/wefreep.git /opt/wefreep
+cd /opt/wefreep
+git pull origin main
+docker build -t wefreep:local .
+docker stop wefreep 2>/dev/null || true
+docker rm wefreep 2>/dev/null || true
+docker run -d --name wefreep -p 3054:3000 --restart unless-stopped wefreep:local
+echo Deployed wefreep on port 3054
+REMOTE
