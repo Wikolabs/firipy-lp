@@ -3,7 +3,7 @@ import { Plus_Jakarta_Sans } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--font-body", display: "swap", weight: ["400","500","600","700","800"] });
-export const metadata: Metadata = { title: "wefreep â€” Friperie malgache IA, trouvez la piece parfaite par photo", description: "Recherchez par photo, trouvez les pieces similaires dans toute la friperie de Madagascar. IA Vision + Prix juste garanti." };
+export const metadata: Metadata = { title: "wefreep — Friperie malgache IA, trouvez la piece parfaite par photo", description: "Recherchez par photo, trouvez les pieces similaires dans toute la friperie de Madagascar. IA Vision + Prix juste garanti." };
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="fr" className={jakarta.variable}>
