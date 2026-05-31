@@ -1,0 +1,36 @@
+version: "3.9"
+
+# wefreep demo - production-ready POC.
+# 2 services orchestrated:
+#   - wefreep (Next.js frontend on host port 3054)
+#   - wefreep-backend (FastAPI Python, internal only on 8000)
+# Internal network so the frontend can reach the backend by service name.
+
+services:
+  wefreep-backend:
+    image: ghcr.io/wikolabs/wefreep-backend:latest
+    container_name: wefreep-backend
+    restart: unless-stopped
+    environment:
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+    networks:
+      - wefreep-net
+
+  wefreep:
+    image: ghcr.io/wikolabs/wefreep:latest
+    container_name: wefreep
+    restart: unless-stopped
+    ports:
+      - "3054:3000"
+    environment:
+      BACKEND_URL: "http://wefreep-backend:8000"
+    depends_on:
+      - wefreep-backend
+    networks:
+      - wefreep-net
+
+networks:
+  wefreep-net:
+    name: wefreep-net
+    driver: bridge
