@@ -15,8 +15,10 @@ jobs:
           SSH_PRIVATE_KEY: ${{ secrets.WIKOLABS_VM_SSH_KEY }}
           VM_HOST: ${{ secrets.WIKOLABS_VM_HOST }}
           VM_USER: ${{ secrets.WIKOLABS_VM_USER }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           mkdir -p ~/.ssh
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh -i ~/.ssh/deploy_key             -o StrictHostKeyChecking=no             -o UserKnownHostsFile=/dev/null             -o ServerAliveInterval=30             -o ServerAliveCountMax=30             "$VM_USER@$VM_HOST"             "set -e; if [ -d /opt/wefreep/.git ]; then cd /opt/wefreep && git fetch origin main && git reset --hard origin/main; else git clone https://github.com/Wikolabs/wefreep.git /opt/wefreep && cd /opt/wefreep; fi && docker build -t wefreep:local . && (docker stop wefreep 2>/dev/null; docker rm wefreep 2>/dev/null; true) && docker run -d --name wefreep -p 3054:3000 --restart unless-stopped wefreep:local && echo 'Deployed wefreep on port 3054'"
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=30 "$VM_USER@$VM_HOST" "set -e; if [ -d /opt/wefreep/.git ]; then cd /opt/wefreep && git fetch origin main && git reset --hard origin/main; else git clone https://github.com/Wikolabs/wefreep.git /opt/wefreep && cd /opt/wefreep; fi && docker build -t wefreep:local . && (docker stop wefreep 2>/dev/null; docker rm wefreep 2>/dev/null; true) && docker run -d --name wefreep -p 3054:3000 -e GROQ_API_KEY='$GROQ_API_KEY' -e GEMINI_API_KEY='$GEMINI_API_KEY' --restart unless-stopped wefreep:local && echo 'Deployed wefreep on port 3054'"
