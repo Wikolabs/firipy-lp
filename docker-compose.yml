@@ -4,7 +4,8 @@ version: "3.9"
 # 2 services orchestrated:
 #   - wefreep (Next.js frontend on host port 3054)
 #   - wefreep-backend (FastAPI Python, internal only on 8000)
-# Internal network so the frontend can reach the backend by service name.
+# Shared external network wkdemo-net (created once by deploy.yml) avoids
+# Docker default address-pool exhaustion across all 47 LP stacks.
 
 services:
   wefreep-backend:
@@ -15,10 +16,22 @@ services:
       GROQ_API_KEY: ${GROQ_API_KEY:-}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
     networks:
+      - wkdemo_net
+
+  wefreep:
+    image: ghcr.io/wikolabs/wefreep:latest
+    container_name: wefreep
+    restart: unless-stopped
+    ports:
+      - "3054:3000"
+    environment:
+      BACKEND_URL: "http://wefreep-backend:8000"
+    depends_on:
+      - wefreep-backend
+    networks:
+      - wkdemo_net
+
+networks:
   wkdemo_net:
     name: wkdemo-net
     external: true
-networks:
-  wefreep-net:
-    name: wefreep-net
-    driver: bridge
